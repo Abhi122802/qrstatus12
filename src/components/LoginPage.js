@@ -82,40 +82,33 @@ const LoginPage = () => {
       component="main"
       sx={{
         height: '100vh',
-        width: '100vw',
-        display: 'flex',
-        flexDirection: 'column',
+        width:"100vw", // Ensure it covers the full viewport height
         background: 'linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab)',
         backgroundSize: '400% 400%',
         animation: `${gradientAnimation} 15s ease infinite`,
         justifyContent: 'center',
         alignItems: 'center',
+        display: 'flex',
       }}
     >
       <CssBaseline />
       <Paper
         elevation={12}
         sx={{
-          p: 4,
+          py: { xs: 4, sm: 6 },
+          px: { xs: 3, sm: 5 },
           borderRadius: 4,
           width: '100%',
           maxWidth: 420,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
           // Glassmorphism effect
-          backgroundColor: 'rgba(255, 255, 255, 0.1)',
+          backgroundColor: 'rgba(255, 255, 255, 0.15)',
           backdropFilter: 'blur(10px)',
           border: '1px solid rgba(255, 255, 255, 0.2)',
         }}
-      />
-      <Grid item xs={12} sm={8} md={5} component={Paper} elevation={6} square>
-        <Box
-          sx={{
-            my: 8,
-            mx: 4,
-            display: 'flex', // This is correct
-            flexDirection: 'column', // This is correct
-            alignItems: 'center',
-          }}
-        >
+      >
           <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
             <LockOutlinedIcon />
           </Avatar>
@@ -123,7 +116,7 @@ const LoginPage = () => {
             Sign in
           </Typography>
           <Box component="form" noValidate onSubmit={handleLogin} sx={{ mt: 1, width: '100%' }}>
-            {error && <Alert severity="error">{error}</Alert>}
+            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
             <Stack spacing={3}>
               <TextField label="Email Address" name="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required fullWidth autoFocus />
               <TextField label="Password" name="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required fullWidth />
@@ -139,9 +132,8 @@ const LoginPage = () => {
               </Grid>
             </Stack>
             <Copyright sx={{ mt: 5 }} />
-          </Box>
         </Box>
-      </Grid>
+      </Paper>
     </Grid>
   );
 };
