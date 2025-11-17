@@ -22,8 +22,10 @@ import {
 import PrintIcon from '@mui/icons-material/Print';
 import ShareIcon from '@mui/icons-material/Share';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import { useApi } from './api';
 
 const CreateQR = () => {
+  const api = useApi();
   const [qrs, setQrs] = useState([]);
   const [count, setCount] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -69,16 +71,13 @@ const CreateQR = () => {
           img.src = qrCodeDataUrl;
         });
 
-        generatedQRs.push({ id, url: canvas.toDataURL('image/png') });
+        generatedQRs.push({ id, url: canvas.toDataURL('image/png'), status: 'inactive' });
       }
       setQrs(generatedQRs);
 
       // Save to MongoDB via backend API
-      const response = await fetch('http://localhost:5000/api/qrcodes', {
+      const response = await api('/qrcodes', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(generatedQRs),
       });
 
@@ -87,8 +86,10 @@ const CreateQR = () => {
       }
 
     } catch (err) {
-      console.error('Error generating QR code(s):', err);
-      setSnackbar({ open: true, message: 'Error saving QR codes to server.' });
+      if (err.message !== 'Unauthorized') {
+        console.error('Error generating QR code(s):', err);
+        setSnackbar({ open: true, message: 'Error saving QR codes to server.' });
+      }
     } finally {
       setLoading(false);
     }

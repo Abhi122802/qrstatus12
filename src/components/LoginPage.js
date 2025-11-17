@@ -54,7 +54,7 @@ const LoginPage = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      const response = await fetch('https://backendqrscan-uhya.vercel.app/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -65,7 +65,13 @@ const LoginPage = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to login.');
+        // Handle validation errors array from express-validator
+        if (data.errors) {
+          const errorMsg = data.errors.map(err => err.msg).join(' ');
+          throw new Error(errorMsg);
+        }
+        // Handle other errors like invalid credentials
+        throw new Error(data.message || 'An unknown error occurred.');
       }
 
       // On successful login, save the token and navigate.

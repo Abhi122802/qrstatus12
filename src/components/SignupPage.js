@@ -17,6 +17,7 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 
 const SignupPage = () => {
   const navigate = useNavigate();
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -30,7 +31,7 @@ const SignupPage = () => {
       setError('Passwords do not match.');
       return;
     }
-    if (!email || !password) {
+    if (!name || !email || !password) {
       setError('Please fill in all fields.');
       return;
     }
@@ -38,18 +39,22 @@ const SignupPage = () => {
     try {
       // This sends the user's data to your backend API endpoint
       // Make sure this URL matches where your backend server is running
-      const response = await fetch('http://localhost:5000/api/auth/signup', {
+      const response = await fetch('https://backendqrscan-uhya.vercel.app/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ name, email, password }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        // If the server sends an error (e.g., "User already exists"), display it
+        // Handle validation errors array from express-validator
+        if (data.errors) {
+          const errorMsg = data.errors.map(err => err.msg).join(' ');
+          throw new Error(errorMsg);
+        }
         throw new Error(data.message || 'Failed to sign up.');
       }
 
@@ -109,6 +114,7 @@ const SignupPage = () => {
           <Box component="form" noValidate onSubmit={handleSignup} sx={{ mt: 3, width: '100%' }}>
             {error && <Alert severity="error">{error}</Alert>}
             <Stack spacing={2}>
+              <TextField label="Name" name="name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} required fullWidth />
               <TextField label="Email Address" name="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required fullWidth />
               <TextField label="Password" name="password" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} required fullWidth />
               <TextField label="Confirm Password" name="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required fullWidth />

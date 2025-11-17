@@ -35,11 +35,36 @@ const ScanQR = () => {
       false // verbose
     );
 
-    const handleScanSuccess = (decodedText) => {
+    const handleScanSuccess = async (decodedText) => {
       // Stop scanning after a successful scan.
       if (scanner) {
         scanner.clear().catch(err => console.error("Failed to clear scanner on success", err));
       }
+      
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`http://localhost:5000/api/qrcodes/${decodedText}/status`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ status: action }),
+        });
+        if (!response.ok) {
+          // Check if the response is JSON before trying to parse it
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.indexOf('application/json') !== -1) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to update status.');
+          } else {
+            throw new Error(`Server error: ${response.status} ${response.statusText}`);
+          }
+        }
+      } catch (err) {
+        setError(err.message);
+      }
+
       setLoading(false);
       setShowScanner(false);
       setScanResult(decodedText);
@@ -48,7 +73,7 @@ const ScanQR = () => {
     };
 
     const onScanError = (errorMessage) => {
-      // This error is often a benign "QR code not found" message.
+      // This error is often a benign "QR code not found" message, so we can ignore it.
       // We can add more specific error handling here if needed.
     };
 
@@ -71,7 +96,7 @@ const ScanQR = () => {
         scanner.clear().catch(err => console.error("Failed to clear scanner on unmount.", err));
       }
     };
-  }, [showScanner]);
+  }, [showScanner, action]);
 
   const handleScanAgain = () => {
     setScanResult(null);
@@ -107,15 +132,17 @@ const ScanQR = () => {
 
           {scanResult && (
             <Box>
-              <Alert severity="success" sx={{ mt: 2, textAlign: 'left' }}>
-                <Typography><strong>Success!</strong></Typography>
-                <Typography sx={{ wordBreak: 'break-all' }}>
-                  QR Code ID: <strong>{scanResult}</strong>
-                </Typography>
-                <Typography>
-                  Status has been set to <strong>{action}</strong>.
-                </Typography>
-              </Alert>
+              {!error && (
+                <Alert severity="success" sx={{ mt: 2, textAlign: 'left' }}>
+                  <Typography><strong>Success!</strong></Typography>
+                  <Typography sx={{ wordBreak: 'break-all' }}>
+                    QR Code ID: <strong>{scanResult}</strong>
+                  </Typography>
+                  <Typography>
+                    Status has been set to <strong>{action}</strong>.
+                  </Typography>
+                </Alert>
+              )}
               <Button variant="contained" startIcon={<ReplayIcon />} onClick={handleScanAgain} sx={{ mt: 3 }}>
                 Scan Another
               </Button>

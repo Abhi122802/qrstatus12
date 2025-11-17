@@ -18,5 +18,11 @@ module.exports = function override(config) {
             Buffer: ['buffer', 'Buffer'],
         }),
     ]);
+    // This will ignore the source map warnings from the html5-qrcode library.
+    config.ignoreWarnings = [
+        function ignoreSourcemapsloaderWarnings(warning) {
+            return warning.module && warning.module.resource.includes("html5-qrcode") && warning.details && warning.details.includes("source-map-loader");
+        },
+    ];
     return config;
 }
