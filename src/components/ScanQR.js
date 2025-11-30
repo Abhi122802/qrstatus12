@@ -58,6 +58,7 @@ const ScanQR = () => {
       if (scanner) {
         scanner.clear().catch(err => console.error("Failed to clear scanner on success", err));
       }
+      setShowScanner(false);
 
       // --- New Logic to append to the log ---
       const status = action || 'scanned';
@@ -73,6 +74,17 @@ const ScanQR = () => {
         console.log("Scanned data is not a URL, using raw text as ID.");
       }
 
+      // Check if this QR ID has already been scanned with the same action.
+      const alreadyScanned = scanLog.find(
+        (entry) => entry.id === qrId && entry.status === status
+      );
+
+      if (alreadyScanned) {
+        setError(`This QR code has already been ${status}.`);
+        setLoading(false);
+        return; // Stop further processing
+      }
+
       const newEntry = { id: qrId, status: status, timestamp: new Date().toISOString() };
 
       setScanLog(prevLog => {
@@ -82,7 +94,6 @@ const ScanQR = () => {
         return updatedLog;
       });
 
-      setShowScanner(false);
       setScanResult(decodedText); // Store the raw scanned URL
       // We are no longer making a backend call, so we can stop the loading state.
       setLoading(false);
