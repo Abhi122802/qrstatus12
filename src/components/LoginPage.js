@@ -15,6 +15,7 @@ import {
   CssBaseline,
 } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import useApi from './api';
 
 // Define keyframes for the animated gradient
 const gradientAnimation = keyframes`
@@ -42,6 +43,7 @@ const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const api = useApi();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -54,12 +56,9 @@ const LoginPage = () => {
     }
 
     try {
-      const response = await fetch('https://backendqrscan-uhya.vercel.app/api/auth/login', {
+      const response = await api('/auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password })
       });
 
       const data = await response.json();

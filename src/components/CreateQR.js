@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
-import QRCode from 'qrcode';
+
 import { v4 as uuidv4 } from 'uuid';
 import {
   Container,
@@ -22,14 +22,13 @@ import {
 import PrintIcon from '@mui/icons-material/Print';
 import ShareIcon from '@mui/icons-material/Share';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import { useApi } from './api';
 
 const CreateQR = () => {
-  const api = useApi();
+  
   const [qrs, setQrs] = useState([]);
   const [count, setCount] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [snackbar, setSnackbar] = useState({ open: false, message: '' });
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   const generateQRCode = async () => {
     const numToGenerate = parseInt(count, 10) || 1;
@@ -40,11 +39,26 @@ const CreateQR = () => {
 
     setLoading(true);
     const generatedQRs = [];
+
     try {
       for (let i = 0; i < numToGenerate; i++) {
         const id = uuidv4();
-        // Generate QR code as a data URL
-        const qrCodeDataUrl = await QRCode.toDataURL(id, { width: 256, margin: 2 });
+
+        // Save to MongoDB via backend API
+        const response = await fetch("https://backendqrscan-uhya.vercel.app/api/qrcodes", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ data: id }), // Send the ID to be encoded
+        });
+
+        const responseData = await response.json();
+        if (!response.ok) {
+          throw new Error(responseData.message || 'Server responded with an error!');
+        }
+
+        const { id: qrId, url: qrUrl } = responseData;
 
         // Create a canvas to draw the QR code and the ID text
         const canvas = document.createElement('canvas');
@@ -65,31 +79,20 @@ const CreateQR = () => {
             // Draw the ID text below the QR code
             ctx.font = `${fontSize}px Arial`;
             ctx.textAlign = 'center';
-            ctx.fillText(id, canvas.width / 2, img.height + padding);
+            ctx.fillText(qrId, canvas.width / 2, img.height + padding);
             resolve();
           };
-          img.src = qrCodeDataUrl;
+          img.src = qrUrl; // Use URL from backend response
         });
 
-        generatedQRs.push({ id, url: canvas.toDataURL('image/png'), status: 'inactive' });
+        generatedQRs.push({ id: qrId, url: canvas.toDataURL('image/png'), status: 'inactive' });
       }
       setQrs(generatedQRs);
-
-      // Save to MongoDB via backend API
-      const response = await api('/qrcodes', {
-        method: 'POST',
-        body: JSON.stringify(generatedQRs),
-      });
-
-      if (!response.ok) {
-        throw new Error('Server responded with an error!');
-      }
+      setSnackbar({ open: true, message: `${numToGenerate} QR Code(s) created successfully!`, severity: 'success' });
 
     } catch (err) {
-      if (err.message !== 'Unauthorized') {
-        console.error('Error generating QR code(s):', err);
-        setSnackbar({ open: true, message: 'Error saving QR codes to server.' });
-      }
+      console.error('Error generating QR code(s):', err);
+      setSnackbar({ open: true, message: err.message || 'Error saving QR codes to server.', severity: 'error' });
     } finally {
       setLoading(false);
     }
@@ -178,12 +181,19 @@ const CreateQR = () => {
       } else {
         // Fallback for browsers that don't support sharing files
         navigator.clipboard.writeText(qr.id);
-        setSnackbar({ open: true, message: 'File sharing not supported. ID copied instead!' });
+        setSnackbar({ open: true, message: 'File sharing not supported. ID copied instead!', severity: 'info' });
       }
     } catch (err) {
       console.error('Error sharing QR code:', err);
-      setSnackbar({ open: true, message: 'Error: Could not share QR code.' });
+      setSnackbar({ open: true, message: 'Error: Could not share QR code.', severity: 'error' });
     }
+  };
+
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setSnackbar({ ...snackbar, open: false });
   };
 
   return (
@@ -265,11 +275,11 @@ const CreateQR = () => {
       </Box>
       <Snackbar
         open={snackbar.open}
-        autoHideDuration={3000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        autoHideDuration={4000}
+        onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity="success" sx={{ width: '100%' }}>
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
           {snackbar.message}
         </Alert>
       </Snackbar>

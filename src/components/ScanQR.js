@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link as RouterLink } from 'react-router-dom';
+import { useParams, Link as RouterLink, useNavigate } from 'react-router-dom';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import {
   Container,
@@ -16,9 +16,11 @@ import ReplayIcon from '@mui/icons-material/Replay';
 const ScanQR = () => {
   const { action } = useParams(); // This will be 'activate' or 'deactivate'
   const [scanResult, setScanResult] = useState(null);
+  const [scanResponseUrl, setScanResponseUrl] = useState(null); // To store URL from backend
   const [showScanner, setShowScanner] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!showScanner) return;
@@ -41,46 +43,49 @@ const ScanQR = () => {
         scanner.clear().catch(err => console.error("Failed to clear scanner on success", err));
       }
       
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:5000/api/qrcodes/${decodedText}/status`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify({ status: action }),
-        });
-        if (!response.ok) {
-          // Check if the response is JSON before trying to parse it
-          const contentType = response.headers.get('content-type');
-          if (contentType && contentType.indexOf('application/json') !== -1) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to update status.');
-          } else {
-            throw new Error(`Server error: ${response.status} ${response.statusText}`);
-          }
-        }
-      } catch (err) {
-        setError(err.message);
-      }
-
-      setLoading(false);
       setShowScanner(false);
       setScanResult(decodedText);
-      // Here you would typically make an API call to your backend
-      // For example: api.post(`/qrcodes/${decodedText}/${action}`);
+
+      try {
+        const headers = {
+          'Content-Type': 'application/json',
+        };
+
+        // Call the backend endpoint to record the scan
+        const response = await fetch(`https://backendqrscan-uhya.vercel.app/api/scans`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ id: decodedText }), // Send the scanned ID
+        });
+
+        const contentType = response.headers.get('content-type');
+        if (!response.ok && !(contentType && contentType.includes('application/json'))) {
+          throw new Error(`Server returned an unexpected response. Status: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          // Now we know it's a JSON error response
+          throw new Error(result.error || 'Failed to record scan.');
+        }
+        
+        // Save the URL from the backend response
+        if (result.url) {
+          setScanResponseUrl(result.url);
+        }
+
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
     };
 
     const onScanError = (errorMessage) => {
       // This error is often a benign "QR code not found" message, so we can ignore it.
-      // We can add more specific error handling here if needed.
     };
 
-    // Start scanning. The scanner will be cleared by the cleanup function.
-    // The render method doesn't return a promise. We handle success and error via callbacks.
-    // We'll assume initialization is fast and set loading to false right away.
-    // The scanner UI itself will show a loading state if camera access is slow.
     try {
       scanner.render(handleScanSuccess, onScanError);
       setLoading(false);
@@ -91,18 +96,18 @@ const ScanQR = () => {
 
     // Cleanup function to stop the scanner when the component unmounts
     return () => {
-      // This check is important to prevent errors if the scanner is already cleared.
       if (scanner && scanner.getState() === 2 /* SCANNING */) {
         scanner.clear().catch(err => console.error("Failed to clear scanner on unmount.", err));
       }
     };
-  }, [showScanner, action]);
+  }, [showScanner, action, navigate]);
 
   const handleScanAgain = () => {
     setScanResult(null);
     setError(null);
     setLoading(true);
     setShowScanner(true);
+    setScanResponseUrl(null);
   };
 
   return (
@@ -110,7 +115,7 @@ const ScanQR = () => {
       <Box sx={{ my: 4, textAlign: 'center' }}>
         <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
           <Typography variant="h4" component="h1" gutterBottom>
-            Scan to {action}
+            Scan QR Code
           </Typography>
 
           {loading && (
@@ -132,16 +137,31 @@ const ScanQR = () => {
 
           {scanResult && (
             <Box>
-              {!error && (
+              {!error ? (
                 <Alert severity="success" sx={{ mt: 2, textAlign: 'left' }}>
                   <Typography><strong>Success!</strong></Typography>
                   <Typography sx={{ wordBreak: 'break-all' }}>
                     QR Code ID: <strong>{scanResult}</strong>
                   </Typography>
                   <Typography>
-                    Status has been set to <strong>{action}</strong>.
+                    Status has been recorded as <strong>scanned</strong>.
                   </Typography>
+                  {scanResponseUrl && (
+                     <Typography>
+                        URL: <MuiLink href={scanResponseUrl} target="_blank" rel="noopener">{scanResponseUrl}</MuiLink>
+                     </Typography>
+                  )}
                 </Alert>
+              ) : (
+                 <Alert severity="error" sx={{ mt: 2, textAlign: 'left' }}>
+                    <Typography><strong>Scan Failed!</strong></Typography>
+                    <Typography sx={{ wordBreak: 'break-all' }}>
+                      QR Code ID: <strong>{scanResult}</strong>
+                    </Typography>
+                    <Typography>
+                      Error: {error}
+                    </Typography>
+                 </Alert>
               )}
               <Button variant="contained" startIcon={<ReplayIcon />} onClick={handleScanAgain} sx={{ mt: 3 }}>
                 Scan Another

@@ -18,65 +18,40 @@ import {
   IconButton,
   Snackbar,
 } from '@mui/material';
-import { styled } from '@mui/material/styles';
+// import { styled } from '@mui/material/styles'; // No longer needed
 // import DeleteIcon from '@mui/icons-material/Delete';
 import ShareIcon from '@mui/icons-material/Share';
 import DownloadIcon from '@mui/icons-material/Download';
 import PrintIcon from '@mui/icons-material/Print';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import { useApi } from './api';
 
-const StatusBadge = styled('span')(({ theme, ownerState }) => ({
-  display: 'inline-block',
-  padding: '2px 8px',
-  borderRadius: '12px',
-  fontSize: '0.75rem',
-  fontWeight: 'bold',
-  color: theme.palette.getContrastText(
-    ownerState.status === 'active' ? theme.palette.success.main : theme.palette.grey[700]
-  ),
-  backgroundColor:
-    ownerState.status === 'active' ? theme.palette.success.main : theme.palette.grey[700],
-  textTransform: 'capitalize',
-  position: 'absolute',
-  top: 8,
-  right: 8,
-  zIndex: 1,
-}));
+// The StatusBadge is removed as the 'status' property does not exist on the QR code model.
 
 const QRList = () => {
   const [qrs, setQrs] = useState([]);
-  const [snackbar, setSnackbar] = useState({ open: false, message: '' });
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const [loading, setLoading] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const api = useApi();
 
   useEffect(() => {
     const fetchQRs = async () => {
-      if (!hasMore) return;
       try {
-        page === 1 ? setLoading(true) : setLoadingMore(true);
-        const response = await api(`/qrcodes?page=${page}`);
+        setLoading(true);
+        const response = await fetch(`https://backendqrscan-uhya.vercel.app/api/qrcodes`);
         if (!response.ok) {
           throw new Error('Could not fetch QR codes');
         }
-        const data = await response.json();
-        setQrs(prevQrs => [...prevQrs, ...data.qrs]);
-        setHasMore(data.hasMore);
+        const responseData = await response.json();
+        // Correctly access the nested qrCodes array from the backend response
+        setQrs(responseData.data.qrCodes || []);
       } catch (error) {
-        if (error.message !== 'Unauthorized') { // Don't show snackbar for auth errors
-          console.error('Error fetching QR codes:', error);
-          setSnackbar({ open: true, message: 'Could not fetch QR codes from server.' });
-        }
+        console.error('Error fetching QR codes:', error);
+        setSnackbar({ open: true, message: 'Could not fetch QR codes from server.', severity: 'error' });
       } finally {
         setLoading(false);
-        setLoadingMore(false);
       }
     };
     fetchQRs();
-  }, [page, hasMore, api]);
+  }, []);
 
   // const handleClearAll = async () => {
   //   try {
@@ -173,12 +148,19 @@ const QRList = () => {
         await navigator.share(shareData);
       } else {
         navigator.clipboard.writeText(qr.id);
-        setSnackbar({ open: true, message: 'File sharing not supported. ID copied instead!' });
+        setSnackbar({ open: true, message: 'File sharing not supported. ID copied instead!', severity: 'info' });
       }
     } catch (err) {
       console.error('Error sharing QR code:', err);
-      setSnackbar({ open: true, message: 'Error: Could not share QR code.' });
+      setSnackbar({ open: true, message: 'Error: Could not share QR code.', severity: 'error' });
     }
+  };
+
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setSnackbar({ ...snackbar, open: false });
   };
 
   return (
@@ -227,9 +209,7 @@ const QRList = () => {
               {qrs.map((qr) => (
                 <Grid item key={qr._id} xs={12} sm={6} md={4} lg={3}>
                   <Card sx={{ wordBreak: 'break-all', position: 'relative' }}>
-                    <StatusBadge ownerState={{ status: qr.status }}>
-                      {qr.status}
-                    </StatusBadge>
+                    {/* StatusBadge removed as 'status' is not a property of the QR code model */}
                     <CardMedia
                       component="img"
                       image={qr.url}
@@ -258,18 +238,6 @@ const QRList = () => {
             </Grid>
           )
         )}
-        {loadingMore && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}>
-            <CircularProgress />
-          </Box>
-        )}
-        {!loading && hasMore && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-            <Button variant="contained" onClick={() => setPage(prevPage => prevPage + 1)} disabled={loadingMore}>
-              Load More
-            </Button>
-          </Box>
-        )}
 
         <MuiLink component={RouterLink} to="/home" sx={{ display: 'block', mt: 4, textAlign: 'center' }}>
           Go back to Homepage
@@ -278,10 +246,10 @@ const QRList = () => {
       <Snackbar
         open={snackbar.open}
         autoHideDuration={3000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity="success" sx={{ width: '100%' }}>
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
           {snackbar.message}
         </Alert>
       </Snackbar>
