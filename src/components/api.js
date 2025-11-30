@@ -5,7 +5,9 @@ import { useCallback } from 'react';
 const useApi = () => {
     const apiFetch = useCallback(async (endpoint, options = {}) => {
         const token = localStorage.getItem('token');
-        const url = `https://backendqrscan-uhya.vercel.app/api${endpoint}`; // Ensure this is your correct backend URL
+        // Use a relative URL for API calls. This works for both local development (with a proxy)
+        // and for production on the same domain.
+        const url = `/api${endpoint}`;
 
         const defaultHeaders = {
             'Content-Type': 'application/json',

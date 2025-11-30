@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link as RouterLink, useNavigate } from 'react-router-dom';
 import { Html5QrcodeScanner } from 'html5-qrcode';
-import { saveAs } from 'file-saver'; // We'll use this library to save the file
 import {
   Container,
   Box,
@@ -23,7 +22,6 @@ const ScanQR = () => {
   const [showScanner, setShowScanner] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [scanLog, setScanLog] = useState([]); // State to hold all scanned data
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -33,12 +31,6 @@ const ScanQR = () => {
     if (document.getElementById('qr-reader-placeholder')?.innerHTML) {
         setLoading(false);
         return;
-    }
-
-    // Load existing scan log from localStorage on initial mount
-    const savedLog = localStorage.getItem('scanLog');
-    if (savedLog) {
-      setScanLog(JSON.parse(savedLog));
     }
 
     const scanner = new Html5QrcodeScanner(
@@ -53,50 +45,49 @@ const ScanQR = () => {
       false // verbose
     );
 
-    const handleScanSuccess = (decodedText) => {
+    const handleScanSuccess = async (decodedText) => {
       // Stop scanning after a successful scan.
       if (scanner) {
         scanner.clear().catch(err => console.error("Failed to clear scanner on success", err));
       }
       setShowScanner(false);
+      setLoading(true); // Show loader while we talk to the backend
 
-      // --- New Logic to append to the log ---
       const status = action || 'scanned';
       let qrId = decodedText;
       try {
         const url = new URL(decodedText);
         const pathParts = url.pathname.split('/');
         const potentialId = pathParts[pathParts.length - 1];
-        if (potentialId.length > 30) {
+        if (potentialId.length > 30) { // Basic UUID check
           qrId = potentialId;
         }
       } catch (e) {
         console.log("Scanned data is not a URL, using raw text as ID.");
       }
 
-      // Check if this QR ID has already been scanned with the same action.
-      const alreadyScanned = scanLog.find(
-        (entry) => entry.id === qrId && entry.status === status
-      );
-
-      if (alreadyScanned) {
-        setError(`This QR code has already been ${status}.`);
+      try {
+        // Call the NEW backend endpoint to log the scan
+        const response = await fetch('/api/log-scan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: qrId,
+            status: status,
+            timestamp: new Date().toISOString(),
+          }),
+        });
+        const result = await response.json();
+        if (!response.ok) {
+          throw new Error(result.message || 'Failed to log scan.');
+        }
+      } catch (err) {
+        setError(err.message);
+      } finally {
         setLoading(false);
-        return; // Stop further processing
       }
 
-      const newEntry = { id: qrId, status: status, timestamp: new Date().toISOString() };
-
-      setScanLog(prevLog => {
-        const updatedLog = [...prevLog, newEntry];
-        // Save the updated log to localStorage
-        localStorage.setItem('scanLog', JSON.stringify(updatedLog));
-        return updatedLog;
-      });
-
       setScanResult(decodedText); // Store the raw scanned URL
-      // We are no longer making a backend call, so we can stop the loading state.
-      setLoading(false);
     };
 
     const onScanError = (errorMessage) => {
@@ -125,20 +116,6 @@ const ScanQR = () => {
     setLoading(true);
     setShowScanner(true);
     setScanResponseUrl(null);
-  };
-
-  const handleDownloadLog = () => {
-    if (scanLog.length === 0) {
-      alert("No scans have been logged yet.");
-      return;
-    }
-
-    // Convert the log array to a CSV string
-    const header = "ID,Status,Timestamp\n";
-    const csvRows = scanLog.map(entry => `${entry.id},${entry.status},${entry.timestamp}`).join("\n");
-    const csvContent = header + csvRows;
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    saveAs(blob, 'scan_log.csv');
   };
 
   return (
@@ -194,11 +171,6 @@ const ScanQR = () => {
               <Button variant="contained" startIcon={<ReplayIcon />} onClick={handleScanAgain} sx={{ mt: 3 }} disabled={loading}>
                 Scan Another
               </Button>
-              {scanLog.length > 0 && (
-                <Button variant="outlined" onClick={handleDownloadLog} sx={{ mt: 3, ml: 2 }}>
-                  Download Log ({scanLog.length} scans)
-                </Button>
-              )}
             </Box>
           )}
 
