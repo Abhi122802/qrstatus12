@@ -23,6 +23,7 @@ const ScanQR = () => {
   const [showScanner, setShowScanner] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [scanLog, setScanLog] = useState([]); // State to hold all scanned data
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -32,6 +33,12 @@ const ScanQR = () => {
     if (document.getElementById('qr-reader-placeholder')?.innerHTML) {
         setLoading(false);
         return;
+    }
+
+    // Load existing scan log from localStorage on initial mount
+    const savedLog = localStorage.getItem('scanLog');
+    if (savedLog) {
+      setScanLog(JSON.parse(savedLog));
     }
 
     const scanner = new Html5QrcodeScanner(
@@ -46,39 +53,34 @@ const ScanQR = () => {
       false // verbose
     );
 
-    const downloadCSV = (scannedData) => {
-      // The 'action' from the URL will be our status
-      const status = action || 'scanned'; 
-      let qrId = scannedData;
-
-      // Try to extract the UUID from the scanned URL for a cleaner ID
-      try {
-        const url = new URL(scannedData);
-        const pathParts = url.pathname.split('/');
-        const potentialId = pathParts[pathParts.length - 1];
-        // Basic check if it looks like a UUID
-        if (potentialId.length > 30) {
-          qrId = potentialId;
-        }
-      } catch (e) {
-        // If it's not a valid URL, we'll just use the raw scanned data as the ID
-        console.log("Scanned data is not a URL, using raw text as ID.");
-      }
-
-      const csvContent = `ID,Status\n${qrId},${status}\n`;
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-
-      // Use file-saver to trigger a download
-      saveAs(blob, 'scan_log.csv');
-    };
-
     const handleScanSuccess = (decodedText) => {
       // Stop scanning after a successful scan.
       if (scanner) {
         scanner.clear().catch(err => console.error("Failed to clear scanner on success", err));
       }
 
-      downloadCSV(decodedText);
+      // --- New Logic to append to the log ---
+      const status = action || 'scanned';
+      let qrId = decodedText;
+      try {
+        const url = new URL(decodedText);
+        const pathParts = url.pathname.split('/');
+        const potentialId = pathParts[pathParts.length - 1];
+        if (potentialId.length > 30) {
+          qrId = potentialId;
+        }
+      } catch (e) {
+        console.log("Scanned data is not a URL, using raw text as ID.");
+      }
+
+      const newEntry = { id: qrId, status: status, timestamp: new Date().toISOString() };
+
+      setScanLog(prevLog => {
+        const updatedLog = [...prevLog, newEntry];
+        // Save the updated log to localStorage
+        localStorage.setItem('scanLog', JSON.stringify(updatedLog));
+        return updatedLog;
+      });
 
       setShowScanner(false);
       setScanResult(decodedText); // Store the raw scanned URL
@@ -112,6 +114,20 @@ const ScanQR = () => {
     setLoading(true);
     setShowScanner(true);
     setScanResponseUrl(null);
+  };
+
+  const handleDownloadLog = () => {
+    if (scanLog.length === 0) {
+      alert("No scans have been logged yet.");
+      return;
+    }
+
+    // Convert the log array to a CSV string
+    const header = "ID,Status,Timestamp\n";
+    const csvRows = scanLog.map(entry => `${entry.id},${entry.status},${entry.timestamp}`).join("\n");
+    const csvContent = header + csvRows;
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    saveAs(blob, 'scan_log.csv');
   };
 
   return (
@@ -167,6 +183,11 @@ const ScanQR = () => {
               <Button variant="contained" startIcon={<ReplayIcon />} onClick={handleScanAgain} sx={{ mt: 3 }} disabled={loading}>
                 Scan Another
               </Button>
+              {scanLog.length > 0 && (
+                <Button variant="outlined" onClick={handleDownloadLog} sx={{ mt: 3, ml: 2 }}>
+                  Download Log ({scanLog.length} scans)
+                </Button>
+              )}
             </Box>
           )}
 
