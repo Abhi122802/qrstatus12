@@ -12,9 +12,11 @@ import {
   CircularProgress,
 } from '@mui/material';
 import ReplayIcon from '@mui/icons-material/Replay';
+import useApi from './api';
 
 const ScanQR = () => {
   const { action } = useParams(); // This will be 'activate' or 'deactivate'
+  const api = useApi();
   const [scanResult, setScanResult] = useState(null);
   const [scanResponseUrl, setScanResponseUrl] = useState(null); // To store URL from backend
   const [showScanner, setShowScanner] = useState(true);
@@ -55,11 +57,8 @@ const ScanQR = () => {
 
       try {
         // Call the NEW backend endpoint to record the scan
-        const response = await fetch(`https://backendqrscan-uhya.vercel.app/api/scan`, {
+        const response = await api(`/scan`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           // Send the full scanned URL to the backend
           body: JSON.stringify({ scannedUrl: decodedText }),
         });
@@ -101,7 +100,7 @@ const ScanQR = () => {
         scanner.clear().catch(err => console.error("Failed to clear scanner on unmount.", err));
       }
     };
-  }, [showScanner, action, navigate]);
+  }, [showScanner, action, navigate, api]);
 
   const handleScanAgain = () => {
     setScanResult(null);

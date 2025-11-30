@@ -22,9 +22,10 @@ import {
 import PrintIcon from '@mui/icons-material/Print';
 import ShareIcon from '@mui/icons-material/Share';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import useApi from './api';
 
 const CreateQR = () => {
-  
+  const api = useApi();
   const [qrs, setQrs] = useState([]);
   const [count, setCount] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -45,11 +46,8 @@ const CreateQR = () => {
         const id = uuidv4();
 
         // Save to MongoDB via backend API
-        const response = await fetch("https://backendqrscan-uhya.vercel.app/api/qrcodes", {
+        const response = await api("/qrcodes", {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify({ data: id }), // Send the ID to be encoded
         });
 

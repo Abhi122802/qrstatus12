@@ -24,10 +24,12 @@ import ShareIcon from '@mui/icons-material/Share';
 import DownloadIcon from '@mui/icons-material/Download';
 import PrintIcon from '@mui/icons-material/Print';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import useApi from './api';
 
 // The StatusBadge is removed as the 'status' property does not exist on the QR code model.
 
 const QRList = () => {
+  const api = useApi();
   const [qrs, setQrs] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const [loading, setLoading] = useState(false);
@@ -36,7 +38,7 @@ const QRList = () => {
     const fetchQRs = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`https://backendqrscan-uhya.vercel.app/api/qrcodes`);
+        const response = await api(`/qrcodes`);
         if (!response.ok) {
           throw new Error('Could not fetch QR codes');
         }
@@ -51,7 +53,7 @@ const QRList = () => {
       }
     };
     fetchQRs();
-  }, []);
+  }, [api]);
 
   // const handleClearAll = async () => {
   //   try {
