@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link as RouterLink, useNavigate } from 'react-router-dom';
 import { Html5QrcodeScanner } from 'html5-qrcode';
+import { saveAs } from 'file-saver'; // We'll use this library to save the file
 import {
   Container,
   Box,
@@ -45,41 +46,44 @@ const ScanQR = () => {
       false // verbose
     );
 
-    const handleScanSuccess = async (decodedText) => {
+    const downloadCSV = (scannedData) => {
+      // The 'action' from the URL will be our status
+      const status = action || 'scanned'; 
+      let qrId = scannedData;
+
+      // Try to extract the UUID from the scanned URL for a cleaner ID
+      try {
+        const url = new URL(scannedData);
+        const pathParts = url.pathname.split('/');
+        const potentialId = pathParts[pathParts.length - 1];
+        // Basic check if it looks like a UUID
+        if (potentialId.length > 30) {
+          qrId = potentialId;
+        }
+      } catch (e) {
+        // If it's not a valid URL, we'll just use the raw scanned data as the ID
+        console.log("Scanned data is not a URL, using raw text as ID.");
+      }
+
+      const csvContent = `ID,Status\n${qrId},${status}\n`;
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+
+      // Use file-saver to trigger a download
+      saveAs(blob, 'scan_log.csv');
+    };
+
+    const handleScanSuccess = (decodedText) => {
       // Stop scanning after a successful scan.
       if (scanner) {
         scanner.clear().catch(err => console.error("Failed to clear scanner on success", err));
       }
-      
+
+      downloadCSV(decodedText);
+
       setShowScanner(false);
       setScanResult(decodedText); // Store the raw scanned URL
-      setLoading(true); // Show loader while we talk to the backend
-
-      try {
-        // Call the NEW backend endpoint to record the scan
-        const response = await api(`/scan`, {
-          method: 'POST',
-          // Send the full scanned URL to the backend
-          body: JSON.stringify({ scannedUrl: decodedText }),
-        });
-
-        const result = await response.json();
-
-        if (!response.ok) {
-          // Now we know it's a JSON error response from our backend
-          throw new Error(result.message || 'Failed to record scan.');
-        }
-        
-        // Save the destination URL from the backend response
-        if (result.data && result.data.destinationUrl) {
-          setScanResponseUrl(result.data.destinationUrl);
-        }
-
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
+      // We are no longer making a backend call, so we can stop the loading state.
+      setLoading(false);
     };
 
     const onScanError = (errorMessage) => {
@@ -138,15 +142,15 @@ const ScanQR = () => {
                   <Typography sx={{ mt: 1 }}>Verifying QR Code...</Typography>
                 </Box>
               ) : error ? (
-                 <Alert severity="error" sx={{ mt: 2, textAlign: 'left' }}>
-                    <Typography><strong>Scan Failed!</strong></Typography>
-                    <Typography sx={{ wordBreak: 'break-all' }}>
-                      Scanned Data: <strong>{scanResult}</strong>
-                    </Typography>
-                    <Typography>
-                      Error: {error}
-                    </Typography>
-                 </Alert>
+                <Alert severity="error" sx={{ mt: 2, textAlign: 'left' }}>
+                  <Typography><strong>Scan Failed!</strong></Typography>
+                  <Typography sx={{ wordBreak: 'break-all' }}>
+                    Scanned Data: <strong>{scanResult}</strong>
+                  </Typography>
+                  <Typography>
+                    Error: {error}
+                  </Typography>
+                </Alert>
               ) : (
                 <Alert severity="success" sx={{ mt: 2, textAlign: 'left' }}>
                   <Typography><strong>Success!</strong></Typography>
@@ -154,9 +158,9 @@ const ScanQR = () => {
                     Status has been recorded as <strong>scanned</strong>.
                   </Typography>
                   {scanResponseUrl && (
-                     <Typography>
-                        Redirect URL: <MuiLink href={scanResponseUrl} target="_blank" rel="noopener">{scanResponseUrl}</MuiLink>
-                     </Typography>
+                    <Typography>
+                      Redirect URL: <MuiLink href={scanResponseUrl} target="_blank" rel="noopener">{scanResponseUrl}</MuiLink>
+                    </Typography>
                   )}
                 </Alert>
               )}
