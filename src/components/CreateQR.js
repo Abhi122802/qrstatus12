@@ -73,8 +73,12 @@ const CreateQR = () => {
             canvas.width = img.width;
             canvas.height = img.height + padding + fontSize;
 
+            // Fill the background with white
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
             // Draw the QR code image
-            ctx.drawImage(img, 0, 0);
+            ctx.drawImage(img, 0, 0, img.width, img.height);
 
             // Draw the ID text below the QR code
             ctx.font = `${fontSize}px Arial`;
@@ -164,10 +168,19 @@ const CreateQR = () => {
 
   const handleShare = async (qr) => {
     try {
-      // Convert data URL to a File object to be shared
-      const response = await fetch(qr.url);
-      const blob = await response.blob();
-      const file = new File([blob], `qr-code-${qr.id}.png`, { type: blob.type });
+      // The URL is a data URL, so we can convert it to a blob directly
+      // without fetching.
+      const res = await fetch(qr.url);
+      const blob = await res.blob();
+      const file = new File([blob], `qr-code-${qr.id}.png`, { type: 'image/png' });
+
+      // This check is important. If for any reason the qr.url is undefined,
+      // the fetch above would fail and we'd get a proxy error.
+      // Let's add a check to be safe, similar to what we did in QRList.js
+      if (!qr.url) {
+        setSnackbar({ open: true, message: 'QR code URL is missing.', severity: 'error' });
+        return;
+      }
 
       const shareData = {
         files: [file],

@@ -25,8 +25,14 @@ const ScanQR = () => {
   useEffect(() => {
     if (!showScanner) return;
 
+    // This check prevents re-initializing the scanner if it's already been rendered.
+    if (document.getElementById('qr-reader-placeholder')?.innerHTML) {
+        setLoading(false);
+        return;
+    }
+
     const scanner = new Html5QrcodeScanner(
-      'qr-reader', // ID of the div to render the scanner
+      'qr-reader-placeholder', // Use a placeholder ID
       {
         qrbox: {
           width: 250,
@@ -44,35 +50,30 @@ const ScanQR = () => {
       }
       
       setShowScanner(false);
-      setScanResult(decodedText);
+      setScanResult(decodedText); // Store the raw scanned URL
+      setLoading(true); // Show loader while we talk to the backend
 
       try {
-        const headers = {
-          'Content-Type': 'application/json',
-        };
-
-        // Call the backend endpoint to record the scan
-        const response = await fetch(`https://backendqrscan-uhya.vercel.app/api/scans`, {
+        // Call the NEW backend endpoint to record the scan
+        const response = await fetch(`https://backendqrscan-uhya.vercel.app/api/scan`, {
           method: 'POST',
-          headers,
-          body: JSON.stringify({ id: decodedText }), // Send the scanned ID
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          // Send the full scanned URL to the backend
+          body: JSON.stringify({ scannedUrl: decodedText }),
         });
-
-        const contentType = response.headers.get('content-type');
-        if (!response.ok && !(contentType && contentType.includes('application/json'))) {
-          throw new Error(`Server returned an unexpected response. Status: ${response.status}`);
-        }
 
         const result = await response.json();
 
         if (!response.ok) {
-          // Now we know it's a JSON error response
-          throw new Error(result.error || 'Failed to record scan.');
+          // Now we know it's a JSON error response from our backend
+          throw new Error(result.message || 'Failed to record scan.');
         }
         
-        // Save the URL from the backend response
-        if (result.url) {
-          setScanResponseUrl(result.url);
+        // Save the destination URL from the backend response
+        if (result.data && result.data.destinationUrl) {
+          setScanResponseUrl(result.data.destinationUrl);
         }
 
       } catch (err) {
@@ -118,7 +119,7 @@ const ScanQR = () => {
             Scan QR Code
           </Typography>
 
-          {loading && (
+          {(loading && !scanResult) && (
             <Box sx={{ my: 4 }}>
               <CircularProgress />
               <Typography sx={{ mt: 1 }}>Initializing Camera...</Typography>
@@ -126,47 +127,50 @@ const ScanQR = () => {
           )}
 
           <Box sx={{ display: showScanner && !loading ? 'block' : 'none' }}>
-            <div id="qr-reader" style={{ width: '100%' }}></div>
+            {/* Use a placeholder div to avoid re-rendering issues */}
+            <div id="qr-reader-placeholder" style={{ width: '100%' }}></div>
           </Box>
-
-          {error && (
-            <Alert severity="error" sx={{ mt: 2 }}>
-              {error}
-            </Alert>
-          )}
 
           {scanResult && (
             <Box>
-              {!error ? (
-                <Alert severity="success" sx={{ mt: 2, textAlign: 'left' }}>
-                  <Typography><strong>Success!</strong></Typography>
-                  <Typography sx={{ wordBreak: 'break-all' }}>
-                    QR Code ID: <strong>{scanResult}</strong>
-                  </Typography>
-                  <Typography>
-                    Status has been recorded as <strong>scanned</strong>.
-                  </Typography>
-                  {scanResponseUrl && (
-                     <Typography>
-                        URL: <MuiLink href={scanResponseUrl} target="_blank" rel="noopener">{scanResponseUrl}</MuiLink>
-                     </Typography>
-                  )}
-                </Alert>
-              ) : (
+              {loading ? (
+                <Box sx={{ my: 4 }}>
+                  <CircularProgress />
+                  <Typography sx={{ mt: 1 }}>Verifying QR Code...</Typography>
+                </Box>
+              ) : error ? (
                  <Alert severity="error" sx={{ mt: 2, textAlign: 'left' }}>
                     <Typography><strong>Scan Failed!</strong></Typography>
                     <Typography sx={{ wordBreak: 'break-all' }}>
-                      QR Code ID: <strong>{scanResult}</strong>
+                      Scanned Data: <strong>{scanResult}</strong>
                     </Typography>
                     <Typography>
                       Error: {error}
                     </Typography>
                  </Alert>
+              ) : (
+                <Alert severity="success" sx={{ mt: 2, textAlign: 'left' }}>
+                  <Typography><strong>Success!</strong></Typography>
+                  <Typography>
+                    Status has been recorded as <strong>scanned</strong>.
+                  </Typography>
+                  {scanResponseUrl && (
+                     <Typography>
+                        Redirect URL: <MuiLink href={scanResponseUrl} target="_blank" rel="noopener">{scanResponseUrl}</MuiLink>
+                     </Typography>
+                  )}
+                </Alert>
               )}
-              <Button variant="contained" startIcon={<ReplayIcon />} onClick={handleScanAgain} sx={{ mt: 3 }}>
+              <Button variant="contained" startIcon={<ReplayIcon />} onClick={handleScanAgain} sx={{ mt: 3 }} disabled={loading}>
                 Scan Another
               </Button>
             </Box>
+          )}
+
+          {error && !scanResult && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {error}
+            </Alert>
           )}
         </Paper>
 
