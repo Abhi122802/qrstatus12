@@ -1,6 +1,7 @@
 import React, { useState, } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
+import QRCode from 'qrcode';
 import { v4 as uuidv4 } from 'uuid';
 import {
   Container,
@@ -23,7 +24,6 @@ import PrintIcon from '@mui/icons-material/Print';
 import ShareIcon from '@mui/icons-material/Share';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import useApi from './api';
-
 const CreateQR = () => {
   const api = useApi();
   const [qrs, setQrs] = useState([]);
@@ -43,20 +43,10 @@ const CreateQR = () => {
 
     try {
       for (let i = 0; i < numToGenerate; i++) {
-        const id = uuidv4();
+        const qrId = uuidv4();
 
-        // Save to MongoDB via backend API
-        const response = await api("/qrcodes", {
-          method: 'POST',
-          body: JSON.stringify({ data: id }), // Send the ID to be encoded
-        });
-
-        const responseData = await response.json();
-        if (!response.ok) {
-          throw new Error(responseData.message || 'Server responded with an error!');
-        }
-
-        const { id: qrId, url: qrUrl } = responseData;
+        // Generate QR code data URL on the client
+        const qrUrl = await QRCode.toDataURL(qrId, { errorCorrectionLevel: 'H' });
 
         // Create a canvas to draw the QR code and the ID text
         const canvas = document.createElement('canvas');
