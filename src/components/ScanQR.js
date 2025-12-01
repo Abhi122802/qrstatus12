@@ -82,7 +82,7 @@ const ScanQR = () => {
 
       // Check if this QR was scanned within the last 5 minutes
       if (recentScans[qrId]) {
-        setError('This QR code was already scanned in the last 5 minutes.');
+        setError('This QR code was already scanned .');
         setLoading(false);
         setShowScanner(false);
         setScanResult(decodedText);
