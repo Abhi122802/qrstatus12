@@ -66,6 +66,30 @@ const ScanQR = () => {
         console.log("Scanned data is not a URL, using raw text as ID.");
       }
 
+      // --- Client-side check for recent scans ---
+      const RECENT_SCAN_KEY = 'recentScans';
+      const FIVE_MINUTES_IN_MS = 5 * 60 * 1000;
+      const now = Date.now();
+
+      let recentScans = JSON.parse(localStorage.getItem(RECENT_SCAN_KEY) || '{}');
+
+      // Clean up old entries from the storage
+      Object.keys(recentScans).forEach(key => {
+        if (now - recentScans[key] > FIVE_MINUTES_IN_MS) {
+          delete recentScans[key];
+        }
+      });
+
+      // Check if this QR was scanned within the last 5 minutes
+      if (recentScans[qrId]) {
+        setError('This QR code was already scanned in the last 5 minutes.');
+        setLoading(false);
+        setShowScanner(false);
+        setScanResult(decodedText);
+        return; // Stop further processing
+      }
+      // --- End of client-side check ---
+
       try {
         // IMPORTANT: Replace this with your actual Google Apps Script Web App URL
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzAeH9iwegHgozHv06KrfNVeftgOPLI_Nkr0-Zn3WSABKYg0zjiUuSIeTgIQFnqrcRH/exec'; // Make sure this is your deployed URL
@@ -91,6 +115,11 @@ const ScanQR = () => {
         if (result.result !== 'success') {
           throw new Error(result.message || 'An unknown error occurred.');
         }
+
+        // On success, record this scan
+        recentScans[qrId] = now;
+        localStorage.setItem(RECENT_SCAN_KEY, JSON.stringify(recentScans));
+
       } catch (err) {
         setError(err.message);
       } finally {
