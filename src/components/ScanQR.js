@@ -29,8 +29,8 @@ const ScanQR = () => {
 
     // This check prevents re-initializing the scanner if it's already been rendered.
     if (document.getElementById('qr-reader-placeholder')?.innerHTML) {
-        setLoading(false);
-        return;
+      setLoading(false);
+      return;
     }
 
     const scanner = new Html5QrcodeScanner(
@@ -50,7 +50,7 @@ const ScanQR = () => {
       if (scanner && scanner.getState() === 2 /* SCANNING */) {
         await scanner.clear().catch(err => console.error("Failed to clear scanner on success", err));
       }
-      
+
       setLoading(true); // Show loader while we talk to the backend
 
       const status = action || 'scanned';
@@ -75,7 +75,7 @@ const ScanQR = () => {
           method: 'POST',
           // 'mode: no-cors' is removed. The Apps Script handles CORS.
           // The header is not strictly needed but good practice.
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({
             id: qrId,
             status: status,
@@ -170,7 +170,7 @@ const ScanQR = () => {
                 <Alert severity="success" sx={{ mt: 2, textAlign: 'left' }}>
                   <Typography><strong>Success!</strong></Typography>
                   <Typography>
-                    Status has been recorded as <strong>scanned</strong>.
+                    The QR code has been successfully <strong>{action || 'scanned'}</strong>.
                   </Typography>
                   {scanResponseUrl && (
                     <Typography>
