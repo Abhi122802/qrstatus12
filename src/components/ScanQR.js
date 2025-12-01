@@ -46,11 +46,11 @@ const ScanQR = () => {
     );
 
     const handleScanSuccess = async (decodedText) => {
-      // Stop scanning after a successful scan.
-      if (scanner) {
-        scanner.clear().catch(err => console.error("Failed to clear scanner on success", err));
+      // Stop scanning and wait for the scanner to clean up its UI before hiding it.
+      if (scanner && scanner.getState() === 2 /* SCANNING */) {
+        await scanner.clear().catch(err => console.error("Failed to clear scanner on success", err));
       }
-      setShowScanner(false);
+      
       setLoading(true); // Show loader while we talk to the backend
 
       const status = action || 'scanned';
@@ -67,8 +67,8 @@ const ScanQR = () => {
       }
 
       try {
-        // Call the NEW backend endpoint to log the scan
-        const response = await fetch('/api/log-scan', {
+        // Use the correct absolute URL for the backend endpoint
+        const response = await fetch('https://qrstatus12.vercel.app/api/log-scan', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -84,6 +84,7 @@ const ScanQR = () => {
       } catch (err) {
         setError(err.message);
       } finally {
+        setShowScanner(false);
         setLoading(false);
       }
 
