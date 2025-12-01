@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { keyframes } from '@emotion/react';
 import {
   Typography,
   Box,
@@ -12,6 +13,13 @@ import {
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import ViewListIcon from '@mui/icons-material/ViewList';
+
+// Define keyframes for the animated gradient, just like in LoginPage.js
+const gradientAnimation = keyframes`
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+`;
 
 const ActionCard = ({ title, description, icon, onClick }) => (
   <Grid item xs={12} sm={6} md={3}>
@@ -81,10 +89,13 @@ const Homepage = () => {
   return (
     <Box
       sx={{
-        flexGrow: 1,
-        p: { xs: 2, sm: 4 },
-        backgroundColor: 'background.default',
         minHeight: '100vh',
+        width: '100vw',
+        background: 'linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab)',
+        backgroundSize: '400% 400%',
+        animation: `${gradientAnimation} 15s ease infinite`,
+        p: { xs: 2, sm: 4 },
+        boxSizing: 'border-box', // Ensure padding is included in the element's total width and height
       }}
     >
       <Box sx={{ textAlign: 'center', mb: 6 }}>
