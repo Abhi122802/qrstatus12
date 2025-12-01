@@ -67,20 +67,28 @@ const ScanQR = () => {
       }
 
       try {
-        // Use the correct absolute URL for the backend endpoint
-        const response = await fetch('https://qrstatus12.vercel.app/api/log-scan', {
+        // IMPORTANT: Replace this with your actual Google Apps Script Web App URL
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzAeH9iwegHgozHv06KrfNVeftgOPLI_Nkr0-Zn3WSABKYg0zjiUuSIeTgIQFnqrcRH/exec';
+
+        // We need to use a different mode for CORS when calling Google Scripts
+        const response = await fetch(GOOGLE_SCRIPT_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          mode: 'no-cors', // Important for Google Scripts to avoid CORS errors
+          headers: {
+            'Content-Type': 'application/json',
+          },
           body: JSON.stringify({
             id: qrId,
             status: status,
             timestamp: new Date().toISOString(),
           }),
         });
-        const result = await response.json();
-        if (!response.ok) {
-          throw new Error(result.message || 'Failed to log scan.');
-        }
+
+        // With 'no-cors', we can't read the response body, so we can't check for success
+        // or failure from the script. We'll assume it worked if the request didn't throw an error.
+        // The browser console will show a CORS error, but the request will still go through
+        // and the data will be logged to your sheet. This is expected behavior.
+
       } catch (err) {
         setError(err.message);
       } finally {
