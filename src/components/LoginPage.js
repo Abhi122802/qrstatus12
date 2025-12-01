@@ -56,7 +56,7 @@ const LoginPage = () => {
     }
 
     try {
-      const response = await api('/auth/login', {
+      const response = await api('https://backendqrscan-uhya.vercel.app/api/auth/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email, password })
       });
