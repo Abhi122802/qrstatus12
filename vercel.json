@@ -2,9 +2,9 @@
   "version": 2,
   "routes": [
     {
-      "methods": ["POST", "GET", "OPTIONS", "PUT", "DELETE"],
-      "source": "/api/(.*)",
-      "destination": "/backend/server.js"
+      "src": "/api/(.*)",
+      "dest": "/backend/server.js",
+      "methods": ["POST", "GET", "OPTIONS", "PUT", "DELETE"]
     }
   ]
 }
