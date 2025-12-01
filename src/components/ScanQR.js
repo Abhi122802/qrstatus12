@@ -68,27 +68,29 @@ const ScanQR = () => {
 
       try {
         // IMPORTANT: Replace this with your actual Google Apps Script Web App URL
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzAeH9iwegHgozHv06KrfNVeftgOPLI_Nkr0-Zn3WSABKYg0zjiUuSIeTgIQFnqrcRH/exec';
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzAeH9iwegHgozHv06KrfNVeftgOPLI_Nkr0-Zn3WSABKYg0zjiUuSIeTgIQFnqrcRH/exec'; // Make sure this is your deployed URL
 
-        // We need to use a different mode for CORS when calling Google Scripts
+        // We can now use standard fetch without 'no-cors' to read the response
         const response = await fetch(GOOGLE_SCRIPT_URL, {
           method: 'POST',
-          mode: 'no-cors', // Important for Google Scripts to avoid CORS errors
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          // 'mode: no-cors' is removed. The Apps Script handles CORS.
+          // The header is not strictly needed but good practice.
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
           body: JSON.stringify({
             id: qrId,
             status: status,
-            timestamp: new Date().toISOString(),
           }),
         });
 
-        // With 'no-cors', we can't read the response body, so we can't check for success
-        // or failure from the script. We'll assume it worked if the request didn't throw an error.
-        // The browser console will show a CORS error, but the request will still go through
-        // and the data will be logged to your sheet. This is expected behavior.
+        if (!response.ok) {
+          // Handle HTTP errors (e.g., 500 from the script)
+          throw new Error(`Server responded with status: ${response.status}`);
+        }
 
+        const result = await response.json();
+        if (result.result !== 'success') {
+          throw new Error(result.message || 'An unknown error occurred.');
+        }
       } catch (err) {
         setError(err.message);
       } finally {
