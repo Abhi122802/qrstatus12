@@ -75,17 +75,20 @@ const ScanQR = () => {
 
       // Clean up old entries from the storage
       Object.keys(recentScans).forEach(key => {
-        if (now - recentScans[key] > FIVE_MINUTES_IN_MS) {
+        // The stored value is now an object { timestamp, action }
+        if (now - recentScans[key].timestamp > FIVE_MINUTES_IN_MS) {
           delete recentScans[key];
         }
       });
 
-      // Check if this QR was scanned within the last 5 minutes
-      if (recentScans[qrId]) {
-        setError('This QR code was already scanned .');
+      // Check if this QR was scanned with the same action within the last 5 minutes
+      const recentScan = recentScans[qrId];
+      if (recentScan && recentScan.action === action) {
+        setError(`This QR code was already ${action}d in the last 5 minutes.`);
         setLoading(false);
         setShowScanner(false);
         setScanResult(decodedText);
+        localStorage.setItem(RECENT_SCAN_KEY, JSON.stringify(recentScans)); // Save cleaned up scans
         return; // Stop further processing
       }
       // --- End of client-side check ---
@@ -116,8 +119,8 @@ const ScanQR = () => {
           throw new Error(result.message || 'An unknown error occurred.');
         }
 
-        // On success, record this scan
-        recentScans[qrId] = now;
+        // On success, record this scan with its action and timestamp
+        recentScans[qrId] = { timestamp: now, action: action };
         localStorage.setItem(RECENT_SCAN_KEY, JSON.stringify(recentScans));
 
       } catch (err) {
