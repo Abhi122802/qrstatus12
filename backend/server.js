@@ -3,7 +3,7 @@ const cors = require('cors');
 const { put, head, del } = require('@vercel/blob');
 
 const app = express();
-const PORT = 5001; // We'll use a different port from the React dev server
+// const PORT = 5001; // We'll use a different port from the React dev server
 
 // Middleware
 app.use(cors()); // Allow requests from your React frontend
