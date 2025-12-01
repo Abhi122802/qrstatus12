@@ -167,17 +167,11 @@ const ScanQR = () => {
                   </Typography>
                 </Alert>
               ) : (
-                <Alert severity="success" sx={{ mt: 2, textAlign: 'left' }}>
-                  <Typography><strong>Success!</strong></Typography>
-                  <Typography>
-                    The QR code has been successfully <strong>{action || 'scanned'}</strong>.
+                <Box sx={{ my: 4 }}>
+                  <Typography variant="h4" component="div" sx={{ textTransform: 'capitalize' }}>
+                    QR Code {action}d!
                   </Typography>
-                  {scanResponseUrl && (
-                    <Typography>
-                      Redirect URL: <MuiLink href={scanResponseUrl} target="_blank" rel="noopener">{scanResponseUrl}</MuiLink>
-                    </Typography>
-                  )}
-                </Alert>
+                </Box>
               )}
               <Button variant="contained" startIcon={<ReplayIcon />} onClick={handleScanAgain} sx={{ mt: 3 }} disabled={loading}>
                 Scan Another
