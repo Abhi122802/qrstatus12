@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "rewrites": [
+  "routes": [
     {
-      "methods": ["POST", "GET", "OPTIONS"],
+      "methods": ["POST", "GET", "OPTIONS", "PUT", "DELETE"],
       "source": "/api/(.*)",
       "destination": "/backend/server.js"
     }
