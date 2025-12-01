@@ -68,7 +68,7 @@ const ScanQR = () => {
 
       try {
         // IMPORTANT: Replace this with your actual Google Apps Script Web App URL
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzAeH9iwegHgozHv06KrfNVeftgOPLI_Nkr0-Zn3WSABKYg0zjiUuSIeTgIQFnqrcRH/exec'; // Make sure this is your deployed URL
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbznuc_QCPS3jbfGhJ0piVFENo7-eY_xAbzJCxMF-L6aNbWq6jihTysB8wqJ33hGfGvp/exec'; // Make sure this is your deployed URL
 
         // We can now use standard fetch without 'no-cors' to read the response
         const response = await fetch(GOOGLE_SCRIPT_URL, {
