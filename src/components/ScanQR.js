@@ -68,7 +68,7 @@ const ScanQR = () => {
 
       // --- Client-side check for recent scans ---
       const RECENT_SCAN_KEY = 'recentScans';
-      const FIVE_MINUTES_IN_MS = 5 * 60 * 1000;
+      const TEN_DAYS_IN_MS = 10 * 24 * 60 * 60 * 1000;
       const now = Date.now();
 
       let recentScans = JSON.parse(localStorage.getItem(RECENT_SCAN_KEY) || '{}');
@@ -76,7 +76,7 @@ const ScanQR = () => {
       // Clean up old entries from the storage
       Object.keys(recentScans).forEach(key => {
         // The stored value is now an object { timestamp, action }
-        if (now - recentScans[key].timestamp > FIVE_MINUTES_IN_MS) {
+        if (now - recentScans[key].timestamp > TEN_DAYS_IN_MS) {
           delete recentScans[key];
         }
       });
@@ -84,7 +84,7 @@ const ScanQR = () => {
       // Check if this QR was scanned with the same action within the last 5 minutes
       const recentScan = recentScans[qrId];
       if (recentScan && recentScan.action === action) {
-        setError(`This QR code was already ${action}d in the last 5 minutes.`);
+        setError(`This QR code was already ${action}d in the last 10 days.`);
         setLoading(false);
         setShowScanner(false);
         setScanResult(decodedText);

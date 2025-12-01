@@ -71,12 +71,6 @@ const Homepage = () => {
       onClick: () => navigate('/list'),
     },
     {
-      title: 'Scan & Activate',
-      description: 'Use your camera to scan a QR code and mark it as active.',
-      icon: <CheckCircleOutlineIcon color="success" />,
-      onClick: () => navigate('/scan/activate'),
-    },
-    {
       title: 'Scan & Deactivate',
       description: 'Scan a QR code to deactivate it or mark it as out of service.',
       icon: <HighlightOffIcon color="error" />,
