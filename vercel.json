@@ -2,6 +2,7 @@
   "version": 2,
   "rewrites": [
     {
+      "methods": ["POST", "GET", "OPTIONS"],
       "source": "/api/(.*)",
       "destination": "/backend/server.js"
     }
