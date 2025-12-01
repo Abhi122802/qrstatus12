@@ -18,7 +18,7 @@ const ScanQR = () => {
   const { action } = useParams(); // This will be 'activate' or 'deactivate'
   const api = useApi();
   const [scanResult, setScanResult] = useState(null);
-  const [scanResponseUrl, setScanResponseUrl] = useState(null); // To store URL from backend
+  const [ setScanResponseUrl] = useState(null); // To store URL from backend
   const [showScanner, setShowScanner] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

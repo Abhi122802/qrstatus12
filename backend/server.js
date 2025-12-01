@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { put, head, del } = require('@vercel/blob');
+const { put, head } = require('@vercel/blob');
 
 const app = express();
 // const PORT = 5001; // We'll use a different port from the React dev server

@@ -23,9 +23,9 @@ import {
 import PrintIcon from '@mui/icons-material/Print';
 import ShareIcon from '@mui/icons-material/Share';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import useApi from './api';
+// import useApi from './api';
 const CreateQR = () => {
-  const api = useApi();
+  // const api = useApi();
   const [qrs, setQrs] = useState([]);
   const [count, setCount] = useState(1);
   const [loading, setLoading] = useState(false);
