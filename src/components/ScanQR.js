@@ -84,7 +84,7 @@ const ScanQR = () => {
       // Check if this QR was scanned with the same action within the last 5 minutes
       const recentScan = recentScans[qrId];
       if (recentScan && recentScan.action === action) {
-        setError(`This QR code was already ${action}d in the last 10 days.`);
+        setError(`This QR code was already ${action}d.`);
         setLoading(false);
         setShowScanner(false);
         setScanResult(decodedText);
