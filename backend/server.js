@@ -59,6 +59,8 @@ app.post('/api/auth/login', (req, res) => {
   return res.status(401).json({ message: 'Invalid credentials.' });
 });
 
-app.listen(PORT, () => {
-  console.log(`Backend server is running on http://localhost:${PORT}`);
-});
+/*
+ * The app.listen() is not needed for Vercel.
+ * Vercel will handle the server creation. We just need to export the app.
+ */
+module.exports = app;
