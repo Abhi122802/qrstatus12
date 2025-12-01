@@ -51,9 +51,9 @@ app.post('/api/log-scan', async (req, res) => {
 app.post('/api/auth/login', (req, res) => {
   // Note: You'll need to add your authentication logic here.
   // This is just a placeholder example.
-  const { username, password } = req.body;
+  const { email, password } = req.body;
 
-  if (username === 'admin' && password === 'password') { // Example credentials
+  if (email === 'admin@example.com' && password === 'password') { // Example credentials
     return res.status(200).json({ message: 'Login successful!', token: 'your-jwt-token' });
   }
   return res.status(401).json({ message: 'Invalid credentials.' });

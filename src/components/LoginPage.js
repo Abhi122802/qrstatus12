@@ -43,7 +43,7 @@ const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  
+
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -58,7 +58,10 @@ const LoginPage = () => {
     try {
       const response = await fetch('https://backendqrscan-uhya.vercel.app/api/auth/login', {
         method: 'POST',
-        body: JSON.stringify({ email, password })
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
@@ -87,7 +90,7 @@ const LoginPage = () => {
       component="main"
       sx={{
         height: '100vh',
-        width:"100vw", // Ensure it covers the full viewport height
+        width: "100vw", // Ensure it covers the full viewport height
         background: 'linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab)',
         backgroundSize: '400% 400%',
         animation: `${gradientAnimation} 15s ease infinite`,
@@ -114,29 +117,29 @@ const LoginPage = () => {
           border: '1px solid rgba(255, 255, 255, 0.2)',
         }}
       >
-          <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
-            <LockOutlinedIcon />
-          </Avatar>
-          <Typography component="h1" variant="h5">
-            Sign in
-          </Typography>
-          <Box component="form" noValidate onSubmit={handleLogin} sx={{ mt: 1, width: '100%' }}>
-            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-            <Stack spacing={3}>
-              <TextField label="Email Address" name="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required fullWidth autoFocus />
-              <TextField label="Password" name="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required fullWidth />
-              <Button type="submit" variant="contained" size="large" fullWidth sx={{ mt: 2, mb: 2 }}>
-                Sign In
-              </Button>
-              <Grid container justifyContent="flex-end">
-                <Grid item>
-                  <Link component={RouterLink} to="/signup" variant="body2">
-                    {"Don't have an account? Sign Up"}
-                  </Link>
-                </Grid>
+        <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
+          <LockOutlinedIcon />
+        </Avatar>
+        <Typography component="h1" variant="h5">
+          Sign in
+        </Typography>
+        <Box component="form" noValidate onSubmit={handleLogin} sx={{ mt: 1, width: '100%' }}>
+          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+          <Stack spacing={3}>
+            <TextField label="Email Address" name="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required fullWidth autoFocus />
+            <TextField label="Password" name="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required fullWidth />
+            <Button type="submit" variant="contained" size="large" fullWidth sx={{ mt: 2, mb: 2 }}>
+              Sign In
+            </Button>
+            <Grid container justifyContent="flex-end">
+              <Grid item>
+                <Link component={RouterLink} to="/signup" variant="body2">
+                  {"Don't have an account? Sign Up"}
+                </Link>
               </Grid>
-            </Stack>
-            <Copyright sx={{ mt: 5 }} />
+            </Grid>
+          </Stack>
+          <Copyright sx={{ mt: 5 }} />
         </Box>
       </Paper>
     </Grid>
