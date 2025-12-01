@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import { keyframes } from '@emotion/react';
 import {
   Button,
   Stack,
@@ -14,6 +15,13 @@ import {
   CssBaseline,
 } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+
+// Define keyframes for the animated gradient, just like in LoginPage.js
+const gradientAnimation = keyframes`
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+`;
 
 const SignupPage = () => {
   const navigate = useNavigate();
@@ -69,7 +77,7 @@ const SignupPage = () => {
     return (
       <Typography variant="body2" color="text.secondary" align="center" {...props}>
         {'Copyright © '}
-        <Link color="inherit" href="https://mui.com/">
+        <Link color="inherit" href="#">
           QR Scan App
         </Link>{' '}
         {new Date().getFullYear()}
@@ -79,27 +87,39 @@ const SignupPage = () => {
   }
 
   return (
-    <Grid container component="main" sx={{ height: '100vh' }}>
+    <Grid
+      container
+      component="main"
+      sx={{
+        height: '100vh',
+        width: "100vw",
+        background: 'linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab)',
+        backgroundSize: '400% 400%',
+        animation: `${gradientAnimation} 15s ease infinite`,
+        justifyContent: 'center',
+        alignItems: 'center',
+        display: 'flex',
+      }}
+    >
       <CssBaseline />
-      <Grid
-        item
-        xs={false}
-        sm={4}
-        md={7}
+      <Paper
+        elevation={12}
         sx={{
-          backgroundImage: 'url(https://source.unsplash.com/random?technology)',
-          backgroundRepeat: 'no-repeat',
-          backgroundColor: (t) =>
-            t.palette.mode === 'light' ? t.palette.grey[50] : t.palette.grey[900],
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
-      />
-      <Grid item xs={12} sm={8} md={5} component={Paper} elevation={6} square>
+          py: { xs: 4, sm: 6 },
+          px: { xs: 3, sm: 5 },
+          borderRadius: 4,
+          width: '100%',
+          maxWidth: 420,
+          backgroundColor: 'rgba(255, 255, 255, 0.15)',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}>
         <Box
           sx={{
-            my: 8,
-            mx: 4,
+            width: '100%',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -111,7 +131,7 @@ const SignupPage = () => {
           <Typography component="h1" variant="h5">
             Sign up
           </Typography>
-          <Box component="form" noValidate onSubmit={handleSignup} sx={{ mt: 3, width: '100%' }}>
+          <Box component="form" noValidate onSubmit={handleSignup} sx={{ mt: 1, width: '100%' }}>
             {error && <Alert severity="error">{error}</Alert>}
             <Stack spacing={2}>
               <TextField label="Name" name="name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} required fullWidth />
@@ -119,7 +139,7 @@ const SignupPage = () => {
               <TextField label="Password" name="password" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} required fullWidth />
               <TextField label="Confirm Password" name="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required fullWidth />
               <Button type="submit" variant="contained" size="large" fullWidth sx={{ mt: 3, mb: 2 }}>
-              Sign Up
+                Sign Up
             </Button>
             <Grid container justifyContent="flex-end">
                 <Grid item>
@@ -132,8 +152,10 @@ const SignupPage = () => {
             <Copyright sx={{ mt: 5 }} />
           </Box>
         </Box>
+        <Paper/>
+      </Paper>
       </Grid>
-    </Grid>
+    
   );
 };
 
